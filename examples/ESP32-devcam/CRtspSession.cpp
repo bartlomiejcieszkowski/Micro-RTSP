@@ -17,6 +17,11 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : LinkedLi
     m_streaming = false;
     m_stopped = false;
 
+    m_RtpServerPort  = 0;
+    m_RtcpServerPort = 0;
+    m_RtpClientPort  = 0;
+    m_RtcpClientPort = 0;
+
     m_RtpSocket = NULLSOCKET;
     m_RtcpSocket = NULLSOCKET;
 };

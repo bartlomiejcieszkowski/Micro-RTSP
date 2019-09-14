@@ -9,10 +9,6 @@ CStreamer::CStreamer(u_short width, u_short height)
     m_Clients.m_Prev = &m_Clients;
     
     printf("Creating TSP streamer\n");
-    m_RtpServerPort  = 0;
-    m_RtcpServerPort = 0;
-    m_RtpClientPort  = 0;
-    m_RtcpClientPort = 0;
 
     m_SequenceNumber = 0;
     m_Timestamp      = 0;
