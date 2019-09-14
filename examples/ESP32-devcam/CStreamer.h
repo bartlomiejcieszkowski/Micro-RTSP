@@ -12,7 +12,7 @@ public:
     virtual ~CStreamer();
 
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
-    void addStreamer(SOCKET& aClient);
+    void addSession(SOCKET& aClient);
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }

@@ -24,7 +24,7 @@ CStreamer::~CStreamer()
     // TODO: go through linked and free all, it shouldn't matter, as we never call destructor anyway
 };
 
-void CStreamer::addStreamer(SOCKET& aClient)
+void CStreamer::addSession(SOCKET& aClient)
 {
     CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
     // we have it stored in m_Clients
