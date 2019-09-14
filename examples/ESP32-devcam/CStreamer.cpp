@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-CStreamer::CStreamer(SOCKET aClient, u_short width, u_short height) : m_Client(aClient)
+CStreamer::CStreamer(u_short width, u_short height)
 {
     printf("Creating TSP streamer\n");
     m_RtpServerPort  = 0;
@@ -28,6 +28,12 @@ CStreamer::~CStreamer()
     udpsocketclose(m_RtpSocket);
     udpsocketclose(m_RtcpSocket);
 };
+
+void CStreamer::addStreamer(SOCKET aClient)
+{
+    // TODO
+    //session = new CRtspSession(&rtspClient, streamer); // our threads RTSP session and state
+}
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
 {

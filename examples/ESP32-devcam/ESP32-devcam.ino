@@ -180,12 +180,14 @@ void setup()
 
 #ifdef ENABLE_RTSPSERVER
     rtspServer.begin();
+
+    //streamer = new SimStreamer(true);             // our streamer for UDP/TCP based RTP transport
+    streamer = new OV2640Streamer(cam);             // our streamer for UDP/TCP based RTP transport
 #endif
 }
 
 CStreamer *streamer;
-CRtspSession *session;
-WiFiClient rtspClient; // FIXME, support multiple clients
+
 /* TODO: 
  *  CStreamer should be created once
  *  CStreamer should have inside CRtspSessions
@@ -228,13 +230,10 @@ void loop()
         }
     }
     else {
-        rtspClient = rtspServer.accept();
+        WiFiClient rtspClient = rtspServer.accept();
 
         if(rtspClient) {
-            //streamer = new SimStreamer(&rtspClient, true);             // our streamer for UDP/TCP based RTP transport
-            streamer = new OV2640Streamer(&rtspClient, cam);             // our streamer for UDP/TCP based RTP transport
-
-            session = new CRtspSession(&rtspClient, streamer); // our threads RTSP session and state
+            streamer->addSession(rtspClient);
         }
     }
 #endif

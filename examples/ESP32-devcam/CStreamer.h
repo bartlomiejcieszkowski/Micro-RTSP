@@ -15,6 +15,7 @@ public:
     u_short GetRtcpServerPort();
 
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
+    void addStreamer(SOCKET aClient);
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);

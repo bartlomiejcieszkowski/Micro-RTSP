@@ -4,7 +4,7 @@
 
 
 
-OV2640Streamer::OV2640Streamer(SOCKET aClient, OV2640 &cam) : CStreamer(aClient, cam.getWidth(), cam.getHeight()), m_cam(cam)
+OV2640Streamer::OV2640Streamer(OV2640 &cam) : CStreamer(cam.getWidth(), cam.getHeight()), m_cam(cam)
 {
     printf("Created streamer width=%d, height=%d\n", cam.getWidth(), cam.getHeight());
 }
