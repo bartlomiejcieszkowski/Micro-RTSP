@@ -1,13 +1,14 @@
 #pragma once
 
 #include "platglue.h"
+#include "LinkedListElement.h"
 
 typedef unsigned const char *BufPtr;
 
 class CStreamer
 {
 public:
-    CStreamer(SOCKET aClient, u_short width, u_short height);
+    CStreamer(u_short width, u_short height);
     virtual ~CStreamer();
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
@@ -15,7 +16,8 @@ public:
     u_short GetRtcpServerPort();
 
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
-    void addStreamer(SOCKET aClient);
+    void addStreamer(SOCKET& aClient);
+    LinkedListElement* getClientsListHead() { return &m_Clients; }
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
@@ -35,7 +37,7 @@ private:
     uint32_t m_Timestamp;
     int m_SendIdx;
     bool m_TCPTransport;
-    SOCKET m_Client;
+    LinkedListElement m_Clients;
     uint32_t m_prevMsec;
 
     u_short m_width; // image data info

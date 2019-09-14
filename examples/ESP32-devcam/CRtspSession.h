@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LinkedListElement.h"
 #include "CStreamer.h"
 #include "platglue.h"
 
@@ -18,7 +19,7 @@ enum RTSP_CMD_TYPES
 #define RTSP_PARAM_STRING_MAX  200
 #define MAX_HOSTNAME_LEN       256
 
-class CRtspSession
+class CRtspSession : LinkedListElement
 {
 public:
     CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer);

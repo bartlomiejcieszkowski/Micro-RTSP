@@ -4,6 +4,9 @@
 
 CStreamer::CStreamer(u_short width, u_short height)
 {
+	m_Clients.m_Next = &m_Clients;
+	m_Clients.m_Prev = &m_Clients;
+	
     printf("Creating TSP streamer\n");
     m_RtpServerPort  = 0;
     m_RtcpServerPort = 0;
@@ -29,10 +32,10 @@ CStreamer::~CStreamer()
     udpsocketclose(m_RtcpSocket);
 };
 
-void CStreamer::addStreamer(SOCKET aClient)
+void CStreamer::addStreamer(SOCKET& aClient)
 {
-    // TODO
-    //session = new CRtspSession(&rtspClient, streamer); // our threads RTSP session and state
+    CRtspSession* session = new CRtspSession(&aClient, this); // our threads RTSP session and state
+	// we have it stored in m_Clients
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
