@@ -130,7 +130,7 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
         {
             socketpeeraddr(session->getClient(), &otherip, &otherport);
-            udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());	
+            udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
         }
         element = element->m_Next;
     }
@@ -149,6 +149,14 @@ bool CStreamer::handleRequests(uint32_t readTimeoutMs)
     {
         CRtspSession* session = static_cast<CRtspSession*>(element);
         retVal &= session->handleRequests(readTimeoutMs);
+
+        element = element->m_Next;
+
+        if (session->m_stopped) 
+        {
+            // remove session here, so we wont have to send to it
+            delete session;
+        }
     }
 
     return retVal;
