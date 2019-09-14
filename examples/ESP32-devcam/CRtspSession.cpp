@@ -365,8 +365,8 @@ void CRtspSession::Handle_RtspSETUP()
                  "RTP/AVP;unicast;destination=127.0.0.1;source=127.0.0.1;client_port=%i-%i;server_port=%i-%i",
                  m_ClientRTPPort,
                  m_ClientRTCPPort,
-                 m_Streamer->GetRtpServerPort(),
-                 m_Streamer->GetRtcpServerPort());
+                 GetRtpServerPort(),
+                 GetRtcpServerPort());
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
              "%s\r\n"
