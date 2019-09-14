@@ -207,34 +207,27 @@ void loop()
 
     // If we have an active client connection, just service that until gone
     // (FIXME - support multiple simultaneous clients)
+    streamer->handleRequests(0); // we don't use a timeout here,
+    // instead we send only if we have new enough frames
     if(streamer->anySessions()) {
-        streamer->handleRequests(0); // we don't use a timeout here,
-        // instead we send only if we have new enough frames
-
         uint32_t now = millis();
         if(now > lastimage + msecPerFrame || now < lastimage) { // handle clock rollover
-            session->broadcastCurrentFrame(now);
+            streamer->streamImage(now);
             lastimage = now;
 
             // check if we are overrunning our max frame rate
             now = millis();
-            if(now > lastimage + msecPerFrame)
-                printf("warning exceeding max frame rate of %d ms\n", now - lastimage);
-        }
-
-        if(session->m_stopped) {
-            delete session;
-            delete streamer;
-            session = NULL;
-            streamer = NULL;
+            if(now > lastimage + msecPerFrame) {
+                Serial.print("warning exceeding max frame rate of ");
+                Serial.print(now - lastimage);
+                Serial.println("%d ms");
+            }
         }
     }
-    else {
-        WiFiClient rtspClient = rtspServer.accept();
-
-        if(rtspClient) {
-            streamer->addSession(rtspClient);
-        }
+    
+    WiFiClient rtspClient = rtspServer.accept();
+    if(rtspClient) {
+        streamer->addSession(rtspClient);
     }
 #endif
 }
