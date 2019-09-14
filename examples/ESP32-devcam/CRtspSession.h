@@ -19,7 +19,7 @@ enum RTSP_CMD_TYPES
 #define RTSP_PARAM_STRING_MAX  200
 #define MAX_HOSTNAME_LEN       256
 
-class CRtspSession : LinkedListElement
+class CRtspSession : public LinkedListElement
 {
 public:
     CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer);

@@ -113,6 +113,15 @@ void lcdMessage(String msg)
 }
 #endif
 
+CStreamer *streamer;
+
+/* TODO: 
+ *  CStreamer should be created once
+ *  CStreamer should have inside CRtspSessions
+ *  If there are any Sessions it shall stream
+ *  If not, efectively idle
+ */
+
 void setup()
 {
   #ifdef ENABLE_OLED
@@ -185,15 +194,6 @@ void setup()
     streamer = new OV2640Streamer(cam);             // our streamer for UDP/TCP based RTP transport
 #endif
 }
-
-CStreamer *streamer;
-
-/* TODO: 
- *  CStreamer should be created once
- *  CStreamer should have inside CRtspSessions
- *  If there are any Sessions it shall stream
- *  If not, efectively idle
-  */
 
 void loop()
 {
