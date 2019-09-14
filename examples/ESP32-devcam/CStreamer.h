@@ -11,7 +11,6 @@ public:
     CStreamer(u_short width, u_short height);
     virtual ~CStreamer();
 
-    void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
 

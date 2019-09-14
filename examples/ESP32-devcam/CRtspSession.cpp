@@ -304,6 +304,36 @@ void CRtspSession::Handle_RtspDESCRIBE()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
+void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP)
+{
+    m_RtpClientPort  = aRtpPort;
+    m_RtcpClientPort = aRtcpPort;
+    m_TCPTransport   = TCP;
+
+    if (!m_TCPTransport)
+    {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
+        for (u_short P = 6970; P < 0xFFFE; P += 2)
+        {
+            m_RtpSocket     = udpsocketcreate(P);
+            if (m_RtpSocket)
+            {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
+                m_RtcpSocket = udpsocketcreate(P + 1);
+                if (m_RtcpSocket)
+                {
+                    m_RtpServerPort  = P;
+                    m_RtcpServerPort = P+1;
+                    break;
+                }
+                else
+                {
+                    udpsocketclose(m_RtpSocket);
+                    udpsocketclose(m_RtcpSocket);
+                };
+            }
+        };
+    };
+};
+
 void CRtspSession::Handle_RtspSETUP()
 {
     static char Response[1024];

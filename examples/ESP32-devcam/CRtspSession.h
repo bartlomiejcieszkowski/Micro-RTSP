@@ -43,6 +43,7 @@ public:
     bool m_streaming;
     bool m_stopped;
 
+    void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
 private:
     void Init();
     bool ParseRtspRequest(char const * aRequest, unsigned aRequestSize);
