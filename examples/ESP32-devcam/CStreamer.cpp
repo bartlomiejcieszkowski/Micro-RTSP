@@ -1,4 +1,5 @@
 #include "CStreamer.h"
+#include "CRtspSession.h"
 
 #include <stdio.h>
 
@@ -34,7 +35,7 @@ CStreamer::~CStreamer()
 
 void CStreamer::addStreamer(SOCKET& aClient)
 {
-    CRtspSession* session = new CRtspSession(&aClient, this); // our threads RTSP session and state
+    CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
 	// we have it stored in m_Clients
 }
 

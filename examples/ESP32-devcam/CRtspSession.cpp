@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()) m_RtspClient(aRtspClient),m_Streamer(aStreamer)
+CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
+ m_RtspClient(aRtspClient),m_Streamer(aStreamer)
 {
     printf("Creating RTSP session\n");
     Init();
