@@ -42,6 +42,11 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
 
     bool isLastFragment = (fragmentOffset + fragmentLen) == jpegLen;
 
+    if (!m_Clients.NotEmpty())
+    {
+        return isLastFragment ? 0 : fragmentOffset;
+    }
+
     // Do we have custom quant tables? If so include them per RFC
 
     bool includeQuantTbl = quant0tbl && quant1tbl && fragmentOffset == 0;
@@ -113,13 +118,22 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
 
     IPADDRESS otherip;
     IPPORT otherport;
-    socketpeeraddr(m_Client, &otherip, &otherport);
 
     // RTP marker bit must be set on last fragment
-    if (m_TCPTransport) // RTP over RTSP - we send the buffer + 4 byte additional header
-        socketsend(m_Client,RtpBuf,RtpPacketSize + 4);
-    else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
-        udpsocketsend(m_RtpSocket,&RtpBuf[4],RtpPacketSize, otherip, m_RtpClientPort);
+    LinkedListElement* element = m_Clients.m_Next;
+    CRtspSession* session = NULL;
+    while (element != &m_Clients)
+    {
+        session = static_cast<CRtspSession*>(element);
+        if (session->isTcpTransport()) // RTP over RTSP - we send the buffer + 4 byte additional header
+            socketsend(session->getClient(),RtpBuf,RtpPacketSize + 4);
+        else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
+        {
+            socketpeeraddr(session->getClient(), &otherip, &otherport);
+            udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort);	
+        }
+        element = element->m_Next;
+    }
 
     return isLastFragment ? 0 : fragmentOffset;
 };

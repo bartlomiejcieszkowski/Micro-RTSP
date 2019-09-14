@@ -47,6 +47,11 @@ public:
 
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
+
+    bool isTcpTransport() { return m_TcpTransport; }
+    SOCKET& getClient() { return m_RtspClient; }
+    UDPSOCKET& getRtpSocket() { return m_RtpSocket; }
+    uint16_t getRtpClientPort() { return m_RtpClientPort; }
 private:
     void Init();
     bool ParseRtspRequest(char const * aRequest, unsigned aRequestSize);
