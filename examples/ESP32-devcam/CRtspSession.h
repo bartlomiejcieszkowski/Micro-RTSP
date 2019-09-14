@@ -43,7 +43,10 @@ public:
     bool m_streaming;
     bool m_stopped;
 
-    void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
+    void    InitTransport(u_short aRtpPort, u_short aRtcpPort);
+
+    u_short GetRtpServerPort();
+    u_short GetRtcpServerPort();
 private:
     void Init();
     bool ParseRtspRequest(char const * aRequest, unsigned aRequestSize);
@@ -72,4 +75,12 @@ private:
     char m_CSeq[RTSP_PARAM_STRING_MAX];                       // RTSP command sequence number
     char m_URLHostPort[MAX_HOSTNAME_LEN];                     // host:port part of the URL
     unsigned m_ContentLength;                                 // SDP string size
+
+    UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
+    UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
+
+    uint16_t m_RtpClientPort;      // RTP receiver port on client (in host byte order!)
+    uint16_t m_RtcpClientPort;     // RTCP receiver port on client (in host byte order!)
+    IPPORT m_RtpServerPort;      // RTP sender port on server
+    IPPORT m_RtcpServerPort;     // RTCP sender port on server
 };

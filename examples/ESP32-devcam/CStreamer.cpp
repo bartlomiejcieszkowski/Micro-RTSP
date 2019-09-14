@@ -5,9 +5,9 @@
 
 CStreamer::CStreamer(u_short width, u_short height)
 {
-	m_Clients.m_Next = &m_Clients;
-	m_Clients.m_Prev = &m_Clients;
-	
+    m_Clients.m_Next = &m_Clients;
+    m_Clients.m_Prev = &m_Clients;
+    
     printf("Creating TSP streamer\n");
     m_RtpServerPort  = 0;
     m_RtcpServerPort = 0;
@@ -17,10 +17,6 @@ CStreamer::CStreamer(u_short width, u_short height)
     m_SequenceNumber = 0;
     m_Timestamp      = 0;
     m_SendIdx        = 0;
-    m_TCPTransport   = false;
-
-    m_RtpSocket = NULLSOCKET;
-    m_RtcpSocket = NULLSOCKET;
 
     m_width = width;
     m_height = height;
@@ -29,14 +25,13 @@ CStreamer::CStreamer(u_short width, u_short height)
 
 CStreamer::~CStreamer()
 {
-    udpsocketclose(m_RtpSocket);
-    udpsocketclose(m_RtcpSocket);
+    // TODO: go through linked and free all, it shouldn't matter, as we never call destructor anyway
 };
 
 void CStreamer::addStreamer(SOCKET& aClient)
 {
     CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
-	// we have it stored in m_Clients
+    // we have it stored in m_Clients
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
@@ -131,16 +126,6 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         udpsocketsend(m_RtpSocket,&RtpBuf[4],RtpPacketSize, otherip, m_RtpClientPort);
 
     return isLastFragment ? 0 : fragmentOffset;
-};
-
-u_short CStreamer::GetRtpServerPort()
-{
-    return m_RtpServerPort;
-};
-
-u_short CStreamer::GetRtcpServerPort()
-{
-    return m_RtcpServerPort;
 };
 
 void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec)

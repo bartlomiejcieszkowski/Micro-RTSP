@@ -16,10 +16,16 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : LinkedLi
     m_TcpTransport   =  false;
     m_streaming = false;
     m_stopped = false;
+
+    m_RtpSocket = NULLSOCKET;
+    m_RtcpSocket = NULLSOCKET;
 };
 
 CRtspSession::~CRtspSession()
 {
+    udpsocketclose(m_RtpSocket);
+    udpsocketclose(m_RtcpSocket);
+
     closesocket(m_RtspClient);
 };
 
@@ -304,13 +310,12 @@ void CRtspSession::Handle_RtspDESCRIBE()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
-void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP)
+void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
 {
     m_RtpClientPort  = aRtpPort;
     m_RtcpClientPort = aRtcpPort;
-    m_TCPTransport   = TCP;
 
-    if (!m_TCPTransport)
+    if (!m_TcpTransport)
     {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
         for (u_short P = 6970; P < 0xFFFE; P += 2)
         {
@@ -334,13 +339,23 @@ void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP)
     };
 };
 
+u_short CRtspSession::GetRtpServerPort()
+{
+    return m_RtpServerPort;
+};
+
+u_short CRtspSession::GetRtcpServerPort()
+{
+    return m_RtcpServerPort;
+};
+
 void CRtspSession::Handle_RtspSETUP()
 {
     static char Response[1024];
     static char Transport[255];
 
-    // init RTP streamer transport type (UDP or TCP) and ports for UDP transport
-    m_Streamer->InitTransport(m_ClientRTPPort,m_ClientRTCPPort,m_TcpTransport);
+    // init RTSP Session transport type (UDP or TCP) and ports for UDP transport
+    InitTransport(m_ClientRTPPort,m_ClientRTCPPort);
 
     // simulate SETUP server response
     if (m_TcpTransport)
