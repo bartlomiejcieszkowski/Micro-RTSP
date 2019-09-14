@@ -208,7 +208,7 @@ void loop()
     // If we have an active client connection, just service that until gone
     // (FIXME - support multiple simultaneous clients)
     if(streamer->anySessions()) {
-        session->handleRequests(0); // we don't use a timeout here,
+        streamer->handleRequests(0); // we don't use a timeout here,
         // instead we send only if we have new enough frames
 
         uint32_t now = millis();

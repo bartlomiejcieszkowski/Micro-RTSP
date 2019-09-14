@@ -16,6 +16,13 @@ public:
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }
+	
+	/**
+       Read from our socket, parsing commands as possible.
+
+       return false if the read timed out
+     */
+    bool handleRequests(uint32_t readTimeoutMs);
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);

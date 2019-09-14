@@ -138,6 +138,22 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
     return isLastFragment ? 0 : fragmentOffset;
 };
 
+/**
+   Call handleRequests on all sessions
+ */
+bool CStreamer::handleRequests(uint32_t readTimeoutMs)
+{
+    bool retVal = true;
+    LinkedListElement* element = m_Clients.m_Next;
+    while(element != &m_Clients)
+    {
+        CRtspSession* session = static_cast<CRtspSession*>(element);
+        retVal &= session->handleRequests(readTimeoutMs);
+    }
+
+    return retVal;
+}
+
 void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec)
 {
     if(m_prevMsec == 0) // first frame init our timestamp
