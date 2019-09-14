@@ -14,9 +14,9 @@ public:
     m_Prev = this;
     }
     
-    int IsEmpty(void)
+    int NotEmpty(void)
     {
-    return (m_Next == this);
+    return (m_Next != this);
     }
     
     LinkedListElement(LinkedListElement* linkedList)
