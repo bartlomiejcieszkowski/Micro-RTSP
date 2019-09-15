@@ -3,11 +3,8 @@
 
 #include <stdio.h>
 
-CStreamer::CStreamer(u_short width, u_short height)
+CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
 {
-    m_Clients.m_Next = &m_Clients;
-    m_Clients.m_Prev = &m_Clients;
-    
     printf("Creating TSP streamer\n");
 
     m_SequenceNumber = 0;
@@ -26,12 +23,14 @@ CStreamer::~CStreamer()
 
 void CStreamer::addSession(WiFiClient& aClient)
 {
+    // printf("CStreamer::addSession\n");
     CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
     // we have it stored in m_Clients
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
 {
+    // printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
 #define KRtpHeaderSize 12           // size of the RTP header
 #define KJpegHeaderSize 8           // size of the special JPEG payload header
 
@@ -125,16 +124,18 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
     while (element != &m_Clients)
     {
         session = static_cast<CRtspSession*>(element);
-        if (session->isTcpTransport()) // RTP over RTSP - we send the buffer + 4 byte additional header
-            socketsend(session->getClient(),RtpBuf,RtpPacketSize + 4);
-        else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
-        {
-            socketpeeraddr(session->getClient(), &otherip, &otherport);
-            udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
+        if (session->m_streaming && !session->m_stopped) {
+            if (session->isTcpTransport()) // RTP over RTSP - we send the buffer + 4 byte additional header
+                socketsend(session->getClient(),RtpBuf,RtpPacketSize + 4);
+            else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
+            {
+                socketpeeraddr(session->getClient(), &otherip, &otherport);
+                udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
+            }
         }
         element = element->m_Next;
     }
-
+    // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
     return isLastFragment ? 0 : fragmentOffset;
 };
 

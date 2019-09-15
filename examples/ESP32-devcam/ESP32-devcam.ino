@@ -224,6 +224,9 @@ void loop()
     
     WiFiClient rtspClient = rtspServer.accept();
     if(rtspClient) {
+        Serial.print("client: ");
+        Serial.print(rtspClient.remoteIP());
+        Serial.println();
         streamer->addSession(rtspClient);
     }
 #endif

@@ -107,12 +107,12 @@ esp_err_t OV2640::init(void)
 
     //init with high specs to pre-allocate larger buffers
     if(psramFound()){
-      printf("config with PSRAM");
+      printf("config with PSRAM\n");
       _cam_config.frame_size = FRAMESIZE_UXGA;
       _cam_config.jpeg_quality = 10;
       _cam_config.fb_count = 2;
     } else {
-      printf("config without PSRAM");
+      printf("config without PSRAM\n");
       _cam_config.frame_size = FRAMESIZE_SVGA;
       _cam_config.jpeg_quality = 12;
       _cam_config.fb_count = 1;
