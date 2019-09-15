@@ -25,7 +25,14 @@ CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
 
 CStreamer::~CStreamer()
 {
-    // TODO: go through linked and free all, it shouldn't matter, as we never call destructor anyway
+    LinkedListElement* element = m_Clients.m_Next;
+    CRtspSession* session = NULL;
+    while (element != &m_Clients)
+    {
+        session = static_cast<CRtspSession*>(element);
+        element = element->m_Next;
+        delete session;
+    }
 };
 
 void CStreamer::addSession(WiFiClient& aClient)
@@ -183,22 +190,22 @@ bool CStreamer::InitUdpTransport(void)
             };
         }
     };
-	++m_udpRefCount;
+    ++m_udpRefCount;
 }
 
 void CStreamer::ReleaseUdpTransport(void)
 {
     --m_udpRefCount;
-	if (m_udpRefCount == 0)
-	{
-		m_RtpServerPort  = 0;
+    if (m_udpRefCount == 0)
+    {
+        m_RtpServerPort  = 0;
         m_RtcpServerPort = 0;
-		udpsocketclose(m_RtpSocket);
+        udpsocketclose(m_RtpSocket);
         udpsocketclose(m_RtcpSocket);
 
-		m_RtpSocket = NULLSOCKET;
-		m_RtcpSocket = NULLSOCKET;
-	}
+        m_RtpSocket = NULLSOCKET;
+        m_RtcpSocket = NULLSOCKET;
+    }
 }
 
 /**
