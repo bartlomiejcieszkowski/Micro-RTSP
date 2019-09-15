@@ -1,17 +1,16 @@
-#include "Common.h"
 #include "OV2640.h"
+#include <WiFi.h>
+#include <WebServer.h>
+#include <WiFiClient.h>
 
 #include "SimStreamer.h"
 #include "OV2640Streamer.h"
 #include "CRtspSession.h"
 
-// #define ENABLE_OLED //if want use oled ,turn on thi macro
+//#define ENABLE_OLED //if want use oled ,turn on thi macro
 // #define SOFTAP_MODE // If you want to run our own softap turn this on
 #define ENABLE_WEBSERVER
 #define ENABLE_RTSPSERVER
-
-
-
 
 #ifdef ENABLE_OLED
 #include "SSD1306.h"
@@ -112,13 +111,6 @@ void lcdMessage(String msg)
 
 CStreamer *streamer;
 
-/* TODO: 
- *  CStreamer should be created once
- *  CStreamer should have inside CRtspSessions
- *  If there are any Sessions it shall stream
- *  If not, efectively idle
- */
-
 void setup()
 {
   #ifdef ENABLE_OLED
@@ -136,9 +128,10 @@ void setup()
     {
         ;
     }
-    cam.init();
+    cam.init(esp32cam_aithinker_config);
 
     IPAddress ip;
+
 
 #ifdef SOFTAP_MODE
     const char *hostname = "devcam";
@@ -218,7 +211,7 @@ void loop()
             }
         }
     }
-
+    
     WiFiClient rtspClient = rtspServer.accept();
     if(rtspClient) {
         Serial.print("client: ");

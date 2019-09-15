@@ -2,6 +2,104 @@
 
 #define TAG "OV2640"
 
+// definitions appropriate for the ESP32-CAM devboard (and most clones)
+camera_config_t esp32cam_config{
+
+    .pin_pwdn = -1, // FIXME: on the TTGO T-Journal I think this is GPIO 0
+    .pin_reset = 15,
+
+    .pin_xclk = 27,
+
+    .pin_sscb_sda = 25,
+    .pin_sscb_scl = 23,
+
+    .pin_d7 = 19,
+    .pin_d6 = 36,
+    .pin_d5 = 18,
+    .pin_d4 = 39,
+    .pin_d3 = 5,
+    .pin_d2 = 34,
+    .pin_d1 = 35,
+    .pin_d0 = 17,
+    .pin_vsync = 22,
+    .pin_href = 26,
+    .pin_pclk = 21,
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+    .pixel_format = PIXFORMAT_JPEG,
+    // .frame_size = FRAMESIZE_UXGA, // needs 234K of framebuffer space
+    // .frame_size = FRAMESIZE_SXGA, // needs 160K for framebuffer
+    // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
+    .frame_size = FRAMESIZE_SVGA,
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
+};
+
+camera_config_t esp32cam_aithinker_config{
+
+    .pin_pwdn = 32,
+    .pin_reset = -1,
+
+    .pin_xclk = 0,
+
+    .pin_sscb_sda = 26,
+    .pin_sscb_scl = 27,
+
+    // Note: LED GPIO is apparently 4 not sure where that goes
+    // per https://github.com/donny681/ESP32_CAMERA_QR/blob/e4ef44549876457cd841f33a0892c82a71f35358/main/led.c
+    .pin_d7 = 35,
+    .pin_d6 = 34,
+    .pin_d5 = 39,
+    .pin_d4 = 36,
+    .pin_d3 = 21,
+    .pin_d2 = 19,
+    .pin_d1 = 18,
+    .pin_d0 = 5,
+    .pin_vsync = 25,
+    .pin_href = 23,
+    .pin_pclk = 22,
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_1,
+    .ledc_channel = LEDC_CHANNEL_1,
+    .pixel_format = PIXFORMAT_JPEG,
+    // .frame_size = FRAMESIZE_UXGA, // needs 234K of framebuffer space
+    // .frame_size = FRAMESIZE_SXGA, // needs 160K for framebuffer
+    // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
+    .frame_size = FRAMESIZE_QVGA,
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
+};
+
+camera_config_t esp32cam_ttgo_t_config{
+
+    .pin_pwdn = 26,
+    .pin_reset = -1,
+
+    .pin_xclk = 32,
+
+    .pin_sscb_sda = 13,
+    .pin_sscb_scl = 12,
+
+    .pin_d7 = 39,
+    .pin_d6 = 36,
+    .pin_d5 = 23,
+    .pin_d4 = 18,
+    .pin_d3 = 15,
+    .pin_d2 = 4,
+    .pin_d1 = 14,
+    .pin_d0 = 5,
+    .pin_vsync = 27,
+    .pin_href = 25,
+    .pin_pclk = 19,
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+    .pixel_format = PIXFORMAT_JPEG,
+    .frame_size = FRAMESIZE_SVGA,
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
+};
 void OV2640::done(void)
 {
     if (fb) {
@@ -86,46 +184,10 @@ void OV2640::setPixelFormat(pixformat_t format)
     }
 }
 
-esp_err_t OV2640::init(void)
+esp_err_t OV2640::init(camera_config_t config)
 {
     memset(&_cam_config, 0, sizeof(_cam_config));
-
-    _cam_config.pin_pwdn = PWDN_GPIO_NUM;
-    _cam_config.pin_reset = RESET_GPIO_NUM;
-
-    _cam_config.pin_xclk = XCLK_GPIO_NUM;
-
-    _cam_config.pin_sscb_sda = SIOD_GPIO_NUM;
-    _cam_config.pin_sscb_scl = SIOC_GPIO_NUM;
-
-    _cam_config.pin_d7 = Y9_GPIO_NUM;
-    _cam_config.pin_d6 = Y8_GPIO_NUM;
-    _cam_config.pin_d5 = Y7_GPIO_NUM;
-    _cam_config.pin_d4 = Y6_GPIO_NUM;
-    _cam_config.pin_d3 = Y5_GPIO_NUM;
-    _cam_config.pin_d2 = Y4_GPIO_NUM;
-    _cam_config.pin_d1 = Y3_GPIO_NUM;
-    _cam_config.pin_d0 = Y2_GPIO_NUM;
-    _cam_config.pin_vsync = VSYNC_GPIO_NUM;
-    _cam_config.pin_href = HREF_GPIO_NUM;
-    _cam_config.pin_pclk = PCLK_GPIO_NUM;
-    _cam_config.xclk_freq_hz = 20000000;
-    _cam_config.ledc_timer = LEDC_TIMER_0;
-    _cam_config.ledc_channel = LEDC_CHANNEL_0;
-    _cam_config.pixel_format = PIXFORMAT_JPEG;
-
-    //init with high specs to pre-allocate larger buffers
-    if(psramFound()){
-      printf("config with PSRAM\n");
-      _cam_config.frame_size = FRAMESIZE_UXGA;
-      _cam_config.jpeg_quality = 10;
-      _cam_config.fb_count = 2;
-    } else {
-      printf("config without PSRAM\n");
-      _cam_config.frame_size = FRAMESIZE_SVGA;
-      _cam_config.jpeg_quality = 12;
-      _cam_config.fb_count = 1;
-    }
+    memcpy(&_cam_config, &config, sizeof(config));
 
     esp_err_t err = esp_camera_init(&_cam_config);
     if (err != ESP_OK)
@@ -134,18 +196,6 @@ esp_err_t OV2640::init(void)
         return err;
     }
     // ESP_ERROR_CHECK(gpio_install_isr_service(0));
-
-    s = esp_camera_sensor_get();
-    // quirks start
-    // quirks end
-
-    // lower for framerate
-    s->set_framesize(s, FRAMESIZE_QVGA);
-
-    // so so settings
-    s->set_whitebal(s, 1);
-    s->set_awb_gain(s, 1);
-    s->set_lenc(s, 1);
 
     return ESP_OK;
 }
