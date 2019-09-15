@@ -41,12 +41,9 @@ public:
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort);
 
-    u_short GetRtpServerPort();
-    u_short GetRtcpServerPort();
-
     bool isTcpTransport() { return m_TcpTransport; }
     SOCKET& getClient() { return m_RtspClient; }
-    UDPSOCKET& getRtpSocket() { return m_RtpSocket; }
+    
     uint16_t getRtpClientPort() { return m_RtpClientPort; }
 private:
     void Init();
@@ -78,11 +75,6 @@ private:
     char m_URLHostPort[MAX_HOSTNAME_LEN];                     // host:port part of the URL
     unsigned m_ContentLength;                                 // SDP string size
 
-    UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
-    UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
-
     uint16_t m_RtpClientPort;      // RTP receiver port on client (in host byte order!)
     uint16_t m_RtcpClientPort;     // RTCP receiver port on client (in host byte order!)
-    IPPORT m_RtpServerPort;      // RTP sender port on server
-    IPPORT m_RtcpServerPort;     // RTCP sender port on server
 };

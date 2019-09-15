@@ -14,6 +14,14 @@ CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
     m_width = width;
     m_height = height;
     m_prevMsec = 0;
+    
+    m_udpRefCount = 0;
+	
+    m_RtpServerPort  = 0;
+    m_RtcpServerPort = 0;
+
+    m_RtpSocket = NULLSOCKET;
+    m_RtcpSocket = NULLSOCKET;
 };
 
 CStreamer::~CStreamer()
@@ -130,7 +138,7 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
             else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
             {
                 socketpeeraddr(session->getClient(), &otherip, &otherport);
-                udpsocketsend(session->getRtpSocket(),&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
+                udpsocketsend(m_RtpSocket,&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
             }
         }
         element = element->m_Next;
@@ -138,6 +146,61 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
     // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
     return isLastFragment ? 0 : fragmentOffset;
 };
+
+u_short CStreamer::GetRtpServerPort()
+{
+    return m_RtpServerPort;
+};
+
+u_short CStreamer::GetRtcpServerPort()
+{
+    return m_RtcpServerPort;
+};
+
+bool CStreamer::InitUdpTransport(void)
+{
+    if (m_udpRefCount != 0)
+    {
+        ++m_udpRefCount;
+        return true;
+    }
+    
+    for (u_short P = 6970; P < 0xFFFE; P += 2)
+    {
+        m_RtpSocket     = udpsocketcreate(P);
+        if (m_RtpSocket)
+        {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
+            m_RtcpSocket = udpsocketcreate(P + 1);
+            if (m_RtcpSocket)
+            {
+                m_RtpServerPort  = P;
+                m_RtcpServerPort = P+1;
+                break;
+            }
+            else
+            {
+                udpsocketclose(m_RtpSocket);
+                udpsocketclose(m_RtcpSocket);
+            };
+        }
+    };
+	++m_udpRefCount;
+}
+
+void CStreamer::ReleaseUdpTransport(void)
+{
+    --m_udpRefCount;
+	if (m_udpRefCount == 0)
+	{
+		m_RtpServerPort  = 0;
+        m_RtcpServerPort = 0;
+		udpsocketclose(m_RtpSocket);
+        udpsocketclose(m_RtcpSocket);
+		
+		m_RtpSocket = NULLSOCKET;
+		m_RtcpSocket = NULLSOCKET;
+	}
+}
 
 /**
    Call handleRequests on all sessions

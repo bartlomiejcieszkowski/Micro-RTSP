@@ -19,20 +19,13 @@ CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedL
     m_streaming = false;
     m_stopped = false;
 
-    m_RtpServerPort  = 0;
-    m_RtcpServerPort = 0;
     m_RtpClientPort  = 0;
     m_RtcpClientPort = 0;
-
-    m_RtpSocket = NULLSOCKET;
-    m_RtcpSocket = NULLSOCKET;
 };
 
 CRtspSession::~CRtspSession()
 {
-    udpsocketclose(m_RtpSocket);
-    udpsocketclose(m_RtcpSocket);
-
+    m_Streamer->ReleaseUdpTransport();
     closesocket(m_RtspClient);
 };
 
@@ -324,36 +317,8 @@ void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
 
     if (!m_TcpTransport)
     {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
-        for (u_short P = 6970; P < 0xFFFE; P += 2)
-        {
-            m_RtpSocket     = udpsocketcreate(P);
-            if (m_RtpSocket)
-            {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
-                m_RtcpSocket = udpsocketcreate(P + 1);
-                if (m_RtcpSocket)
-                {
-                    m_RtpServerPort  = P;
-                    m_RtcpServerPort = P+1;
-                    break;
-                }
-                else
-                {
-                    udpsocketclose(m_RtpSocket);
-                    udpsocketclose(m_RtcpSocket);
-                };
-            }
-        };
+        m_Streamer->InitUdpTransport();
     };
-};
-
-u_short CRtspSession::GetRtpServerPort()
-{
-    return m_RtpServerPort;
-};
-
-u_short CRtspSession::GetRtcpServerPort()
-{
-    return m_RtcpServerPort;
 };
 
 void CRtspSession::Handle_RtspSETUP()
@@ -372,8 +337,8 @@ void CRtspSession::Handle_RtspSETUP()
                  "RTP/AVP;unicast;destination=127.0.0.1;source=127.0.0.1;client_port=%i-%i;server_port=%i-%i",
                  m_ClientRTPPort,
                  m_ClientRTCPPort,
-                 GetRtpServerPort(),
-                 GetRtcpServerPort());
+                 m_Streamer->GetRtpServerPort(),
+                 m_Streamer->GetRtcpServerPort());
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
              "%s\r\n"

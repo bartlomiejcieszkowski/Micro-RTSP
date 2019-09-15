@@ -24,6 +24,12 @@ public:
        return false if the read timed out
      */
     bool handleRequests(uint32_t readTimeoutMs);
+	
+	u_short GetRtpServerPort();
+    u_short GetRtcpServerPort();
+	
+	bool InitUdpTransport(void);
+	void ReleaseUdpTransport(void);
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
@@ -37,6 +43,14 @@ private:
     
     LinkedListElement m_Clients;
     uint32_t m_prevMsec;
+
+    UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
+	UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
+	
+	IPPORT m_RtpServerPort;      // RTP sender port on server
+    IPPORT m_RtcpServerPort;     // RTCP sender port on server
+
+    int m_udpRefCount;
 
     u_short m_width; // image data info
     u_short m_height;
