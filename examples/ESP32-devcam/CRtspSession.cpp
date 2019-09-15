@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
- m_RtspClient(aRtspClient),m_Streamer(aStreamer)
+CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
+ m_Client(aClient),
+ m_Streamer(aStreamer)
 {
     printf("Creating RTSP session\n");
     Init();
 
+    m_RtspClient = &m_Client;
     m_RtspSessionID  = getRandom();         // create a session ID
     m_RtspSessionID |= 0x80000000;
     m_StreamID       = -1;

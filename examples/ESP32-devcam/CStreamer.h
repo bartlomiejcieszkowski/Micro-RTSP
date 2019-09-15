@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "platglue.h"
 #include "LinkedListElement.h"
 
@@ -12,7 +13,7 @@ public:
     virtual ~CStreamer();
 
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
-    void addSession(SOCKET& aClient);
+    void addSession(WiFiClient& aClient);
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }

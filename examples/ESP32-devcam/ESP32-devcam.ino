@@ -1,7 +1,4 @@
-#include <WiFi.h>
-#include <WebServer.h>
-#include <WiFiClient.h>
-
+#include "Common.h"
 #include "OV2640.h"
 
 #include "SimStreamer.h"
