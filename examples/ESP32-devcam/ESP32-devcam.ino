@@ -218,7 +218,7 @@ void loop()
             }
         }
     }
-    
+
     WiFiClient rtspClient = rtspServer.accept();
     if(rtspClient) {
         Serial.print("client: ");

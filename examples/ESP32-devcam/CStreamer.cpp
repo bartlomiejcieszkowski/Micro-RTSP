@@ -6,22 +6,21 @@
 CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
 {
     printf("Creating TSP streamer\n");
+    m_RtpServerPort  = 0;
+    m_RtcpServerPort = 0;
 
     m_SequenceNumber = 0;
     m_Timestamp      = 0;
     m_SendIdx        = 0;
 
+    m_RtpSocket = NULLSOCKET;
+    m_RtcpSocket = NULLSOCKET;
+
     m_width = width;
     m_height = height;
     m_prevMsec = 0;
-    
-    m_udpRefCount = 0;
-	
-    m_RtpServerPort  = 0;
-    m_RtcpServerPort = 0;
 
-    m_RtpSocket = NULLSOCKET;
-    m_RtcpSocket = NULLSOCKET;
+    m_udpRefCount = 0;
 };
 
 CStreamer::~CStreamer()
@@ -164,7 +163,7 @@ bool CStreamer::InitUdpTransport(void)
         ++m_udpRefCount;
         return true;
     }
-    
+
     for (u_short P = 6970; P < 0xFFFE; P += 2)
     {
         m_RtpSocket     = udpsocketcreate(P);
@@ -196,7 +195,7 @@ void CStreamer::ReleaseUdpTransport(void)
         m_RtcpServerPort = 0;
 		udpsocketclose(m_RtpSocket);
         udpsocketclose(m_RtcpSocket);
-		
+
 		m_RtpSocket = NULLSOCKET;
 		m_RtcpSocket = NULLSOCKET;
 	}

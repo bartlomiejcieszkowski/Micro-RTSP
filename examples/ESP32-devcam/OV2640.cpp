@@ -138,10 +138,10 @@ esp_err_t OV2640::init(void)
     s = esp_camera_sensor_get();
     // quirks start
     // quirks end
-    
+
     // lower for framerate
     s->set_framesize(s, FRAMESIZE_QVGA);
-    
+
     // so so settings
     s->set_whitebal(s, 1);
     s->set_awb_gain(s, 1);
