@@ -15,10 +15,12 @@ class OV2640
 public:
     OV2640(){
         fb = NULL;
+        s = NULL;
     };
     ~OV2640(){
     };
     esp_err_t init(void);
+    void done(void);
     void run(void);
     size_t getSize(void);
     uint8_t *getfb(void);
@@ -38,6 +40,7 @@ private:
     camera_config_t _cam_config;
 
     camera_fb_t *fb;
+    sensor_t *s;
 };
 
 #endif //OV2640_H_

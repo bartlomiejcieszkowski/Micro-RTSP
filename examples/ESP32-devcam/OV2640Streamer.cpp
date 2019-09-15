@@ -15,4 +15,5 @@ void OV2640Streamer::streamImage(uint32_t curMsec)
 
     BufPtr bytes = m_cam.getfb();
     streamFrame(bytes, m_cam.getSize(), curMsec);
+    m_cam.done();
 }

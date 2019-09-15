@@ -2,6 +2,15 @@
 
 #define TAG "OV2640"
 
+void OV2640::done(void)
+{
+    if (fb) {
+        //return the frame buffer back to the driver for reuse
+        esp_camera_fb_return(fb);
+        fb = NULL;
+    }
+}
+
 void OV2640::run(void)
 {
     if (fb)
@@ -125,6 +134,18 @@ esp_err_t OV2640::init(void)
         return err;
     }
     // ESP_ERROR_CHECK(gpio_install_isr_service(0));
+
+    s = esp_camera_sensor_get();
+    // quirks start
+    // quirks end
+    
+    // lower for framerate
+    s->set_framesize(s, FRAMESIZE_QVGA);
+    
+    // so so settings
+    s->set_whitebal(s, 1);
+    s->set_awb_gain(s, 1);
+    s->set_lenc(s, 1);
 
     return ESP_OK;
 }

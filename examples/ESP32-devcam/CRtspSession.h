@@ -36,11 +36,6 @@ public:
      */
     bool handleRequests(uint32_t readTimeoutMs);
 
-    /**
-       broadcast a current frame
-     */
-    void broadcastCurrentFrame(uint32_t curMsec);
-
     bool m_streaming;
     bool m_stopped;
 

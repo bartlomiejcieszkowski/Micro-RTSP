@@ -203,11 +203,10 @@ void loop()
     static uint32_t lastimage = millis();
 
     // If we have an active client connection, just service that until gone
-    // (FIXME - support multiple simultaneous clients)
     streamer->handleRequests(0); // we don't use a timeout here,
     // instead we send only if we have new enough frames
+    uint32_t now = millis();
     if(streamer->anySessions()) {
-        uint32_t now = millis();
         if(now > lastimage + msecPerFrame || now < lastimage) { // handle clock rollover
             streamer->streamImage(now);
             lastimage = now;
@@ -215,9 +214,7 @@ void loop()
             // check if we are overrunning our max frame rate
             now = millis();
             if(now > lastimage + msecPerFrame) {
-                Serial.print("warning exceeding max frame rate of ");
-                Serial.print(now - lastimage);
-                Serial.println("%d ms");
+                printf("warning exceeding max frame rate of %d ms\n", now - lastimage);
             }
         }
     }

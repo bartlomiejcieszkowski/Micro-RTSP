@@ -17,8 +17,8 @@ public:
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }
-	
-	/**
+    
+    /**
        Read from our socket, parsing commands as possible.
 
        return false if the read timed out
