@@ -1,9 +1,7 @@
 #ifndef OV2640_H_
 #define OV2640_H_
 
-#include <Arduino.h>
-#include <pgmspace.h>
-#include <stdio.h>
+#include "platglue.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_camera.h"

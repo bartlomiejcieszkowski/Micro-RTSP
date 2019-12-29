@@ -2,17 +2,16 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
- m_Client(aClient),
+CRtspSession::CRtspSession(SOCKET aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
  m_Streamer(aStreamer)
 {
     printf("Creating RTSP session\n");
     Init();
 
-    m_RtspClient = &m_Client;
+    m_RtspClient = aClient;
     m_RtspSessionID  = getRandom();         // create a session ID
     m_RtspSessionID |= 0x80000000;
-    m_StreamID       = -1;
+    m_StreamID       =  0;
     m_ClientRTPPort  =  0;
     m_ClientRTCPPort =  0;
     m_TcpTransport   =  false;
@@ -235,9 +234,16 @@ RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char const * aRequest, unsigned 
     return m_RtspCmdType;
 };
 
+static char Response[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
+// Used by:
+// Handle_RtspOPTION
+// Handle_RtspDESCRIBE
+// Handle_RtspSETUP
+// Handle_RtspPLAY
+
+
 void CRtspSession::Handle_RtspOPTION()
 {
-    static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
@@ -248,15 +254,13 @@ void CRtspSession::Handle_RtspOPTION()
 
 void CRtspSession::Handle_RtspDESCRIBE()
 {
-    static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     static char SDPBuf[1024];
-    static char URLBuf[1024];
 
     // check whether we know a stream with the URL which is requested
-    m_StreamID = -1;        // invalid URL
-    if ((strcmp(m_URLPreSuffix,"mjpeg") == 0) && (strcmp(m_URLSuffix,"1") == 0)) m_StreamID = 0; else
-    if ((strcmp(m_URLPreSuffix,"mjpeg") == 0) && (strcmp(m_URLSuffix,"2") == 0)) m_StreamID = 1;
-    if (m_StreamID == -1)
+    m_StreamID = 0;        // invalid URL
+    if ((strcmp(m_URLPreSuffix,"mjpeg") == 0) && (strcmp(m_URLSuffix,"1") == 0)) m_StreamID = 1; else
+    if ((strcmp(m_URLPreSuffix,"mjpeg") == 0) && (strcmp(m_URLSuffix,"2") == 0)) m_StreamID = 2;
+    if (m_StreamID == 0)
     {   // Stream not available
         snprintf(Response,sizeof(Response),
                  "RTSP/1.0 404 Stream Not Found\r\nCSeq: %s\r\n%s\r\n",
@@ -268,10 +272,8 @@ void CRtspSession::Handle_RtspDESCRIBE()
     };
 
     // simulate DESCRIBE server response
-    static char OBuf[256];
     char * ColonPtr;
-    strcpy(OBuf,m_URLHostPort);
-    ColonPtr = strstr(OBuf,":");
+    ColonPtr = strchr(m_URLHostPort,':');
     if (ColonPtr != nullptr) ColonPtr[0] = 0x00;
 
     snprintf(SDPBuf,sizeof(SDPBuf),
@@ -283,27 +285,19 @@ void CRtspSession::Handle_RtspDESCRIBE()
              // "a=x-dimensions: 640,480\r\n"
              "c=IN IP4 0.0.0.0\r\n",
              rand(),
-             OBuf);
-    char StreamName[64];
-    switch (m_StreamID)
-    {
-    case 0: strcpy(StreamName,"mjpeg/1"); break;
-    case 1: strcpy(StreamName,"mjpeg/2"); break;
-    };
-    snprintf(URLBuf,sizeof(URLBuf),
-             "rtsp://%s/%s",
-             m_URLHostPort,
-             StreamName);
+             m_URLHostPort);
+    if (ColonPtr != nullptr) ColonPtr[0] = ':';
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
              "%s\r\n"
-             "Content-Base: %s/\r\n"
+             "Content-Base: rtsp://%s/mjpeg/%u/\r\n"
              "Content-Type: application/sdp\r\n"
              "Content-Length: %d\r\n\r\n"
              "%s",
              m_CSeq,
              DateHeader(),
-             URLBuf,
+             m_URLHostPort,
+	     m_StreamID,
              (int) strlen(SDPBuf),
              SDPBuf);
 
@@ -323,7 +317,6 @@ void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
 
 void CRtspSession::Handle_RtspSETUP()
 {
-    static char Response[1024];
     static char Transport[255];
 
     // init RTSP Session transport type (UDP or TCP) and ports for UDP transport
@@ -354,7 +347,6 @@ void CRtspSession::Handle_RtspSETUP()
 
 void CRtspSession::Handle_RtspPLAY()
 {
-    static char Response[1024];
 
     // simulate SETUP server response
     snprintf(Response,sizeof(Response),
@@ -377,13 +369,6 @@ char const * CRtspSession::DateHeader()
     strftime(buf, sizeof buf, "Date: %a, %b %d %Y %H:%M:%S GMT", gmtime(&tt));
     return buf;
 }
-
-int CRtspSession::GetStreamID()
-{
-    return m_StreamID;
-};
-
-
 
 /**
    Read from our socket, parsing commands as possible.

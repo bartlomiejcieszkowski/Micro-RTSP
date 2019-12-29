@@ -11,7 +11,7 @@ public:
     CStreamer(u_short width, u_short height);
     virtual ~CStreamer();
 
-    void addSession(WiFiClient& aClient);
+    void addSession(SOCKET aClient);
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }

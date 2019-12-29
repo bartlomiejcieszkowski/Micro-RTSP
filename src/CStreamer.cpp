@@ -35,11 +35,12 @@ CStreamer::~CStreamer()
     }
 };
 
-void CStreamer::addSession(WiFiClient& aClient)
+void CStreamer::addSession(SOCKET aClient)
 {
     // printf("CStreamer::addSession\n");
     CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
     // we have it stored in m_Clients
+    (void)session;
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
