@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -90,10 +91,18 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
 inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
 {
     // Use a timeout on our socket read to instead serve frames
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    if (timeoutmsec)
+    {
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    }
+    else
+    {
+        int flags = fcntl(sock, F_GETFL);
+	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+    }
 
     int res = recv(sock,buf,buflen,0);
     if(res > 0) {
@@ -109,3 +118,8 @@ inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
             return 0; // unknown error, just claim client dropped it
     };
 }
+
+inline void yieldthread(void)
+{
+}
+

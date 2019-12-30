@@ -92,3 +92,8 @@ inline int socketread(SOCKET sock, char* buf, size_t buflen, int timeoutmsec)
     }
 }
 
+inline void yieldthread(void)
+{
+    yield();
+}
+

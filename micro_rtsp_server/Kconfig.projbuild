@@ -1,0 +1,8 @@
+menu "Micro RTSP Server Configuration"
+    config MICRO_RTSP_SERVER
+        bool "Enable Micro RTSP Server"
+        default y
+        help
+            Enables Micro RTSP Server
+
+endmenu

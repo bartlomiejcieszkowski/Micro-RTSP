@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(SOCKET aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
+CRtspSession::CRtspSession(SOCKET aClient, CStreamer * aStreamer) : LinkedListElement(),
  m_Streamer(aStreamer)
 {
     printf("Creating RTSP session\n");
@@ -306,6 +306,7 @@ void CRtspSession::Handle_RtspDESCRIBE()
 
 void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
 {
+    printf("CRtspSession::InitTransport\n");
     m_RtpClientPort  = aRtpPort;
     m_RtcpClientPort = aRtcpPort;
 

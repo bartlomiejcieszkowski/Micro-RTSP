@@ -2,7 +2,6 @@
 #define PLATGLUE_ESPIDF_ESP32_H_
 
 #include <lwip/sockets.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -74,7 +73,7 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = destaddr;
     addr.sin_port = htons(destport);
-    //printf("UDP send to 0x%0x:%0x\n", destaddr, destport);
+    printf("UDP send to 0x%0x:%0x\n", destaddr, destport);
 
     return sendto(sockfd, buf, len, 0, (struct sockaddr *) &addr, sizeof(addr));
 }
@@ -87,10 +86,18 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
 inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
 {
     // Use a timeout on our socket read to instead serve frames
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    if (timeoutmsec)
+    {
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+    }
+    else
+    {
+        int flags = fcntl(sock, F_GETFL);
+	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+    }
 
     int res = recv(sock,buf,buflen,0);
     if(res > 0) {
@@ -106,5 +113,11 @@ inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
             return 0; // unknown error, just claim client dropped it
     };
 }
+
+inline void yieldthread(void)
+{
+    vTaskDelay(0);
+}
+
 #endif //PLATGLUE_ESPIDF_ESP32_H_
 

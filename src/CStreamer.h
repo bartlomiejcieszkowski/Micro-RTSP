@@ -39,7 +39,6 @@ private:
 
     u_short m_SequenceNumber;
     uint32_t m_Timestamp;
-    int m_SendIdx;
 
     LinkedListElement m_Clients;
     uint32_t m_prevMsec;

@@ -105,3 +105,9 @@ inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
         return numRead;
     }
 }
+
+inline void yieldthread(void)
+{
+    yield();
+}
+

@@ -1,5 +1,7 @@
 #pragma once
 
+#define ESP_IDF_ARCH_ESP32
+
 #ifdef ARDUINO_ARCH_ESP32
 #include "platglue-esp32.h"
 #elif defined(ESP_IDF_ARCH_ESP32)

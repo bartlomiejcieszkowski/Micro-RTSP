@@ -11,7 +11,6 @@ CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
 
     m_SequenceNumber = 0;
     m_Timestamp      = 0;
-    m_SendIdx        = 0;
 
     m_RtpSocket = NULLSOCKET;
     m_RtcpSocket = NULLSOCKET;
@@ -37,15 +36,18 @@ CStreamer::~CStreamer()
 
 void CStreamer::addSession(SOCKET aClient)
 {
-    // printf("CStreamer::addSession\n");
+    printf("CStreamer::addSession\n");
     CRtspSession* session = new CRtspSession(aClient, this); // our threads RTSP session and state
-    // we have it stored in m_Clients
-    (void)session;
+    if (session) {
+        m_Clients.AddToList(static_cast<LinkedListElement*>(session));
+    } else {
+        printf("CStreamer::addSession failed to create CRtspSession\n");
+    }
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
 {
-    // printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
+    //printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
 #define KRtpHeaderSize 12           // size of the RTP header
 #define KJpegHeaderSize 8           // size of the special JPEG payload header
 
@@ -55,7 +57,6 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         fragmentLen = jpegLen - fragmentOffset;
 
     bool isLastFragment = (fragmentOffset + fragmentLen) == jpegLen;
-
     if (!m_Clients.NotEmpty())
     {
         return isLastFragment ? 0 : fragmentOffset;
@@ -122,7 +123,8 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         memcpy(RtpBuf + headerLen, quant1tbl, numQantBytes);
         headerLen += numQantBytes;
     }
-    // printf("Sending timestamp %d, seq %d, fragoff %d, fraglen %d, jpegLen %d\n", m_Timestamp, m_SequenceNumber, fragmentOffset, fragmentLen, jpegLen);
+    if (isLastFragment)
+        printf("Sending timestamp %d, seq %d, fragoff %d, fraglen %d, jpegLen %d\n", m_Timestamp, m_SequenceNumber, fragmentOffset, fragmentLen, jpegLen);
 
     // append the JPEG scan data to the RTP buffer
     memcpy(RtpBuf + headerLen,jpeg + fragmentOffset, fragmentLen);
@@ -147,10 +149,13 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
                 socketpeeraddr(session->getClient(), &otherip, &otherport);
                 udpsocketsend(m_RtpSocket,&RtpBuf[4],RtpPacketSize, otherip, session->getRtpClientPort());
             }
+	    yieldthread();
         }
         element = element->m_Next;
     }
-    // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
+    if (isLastFragment)
+        printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
+
     return isLastFragment ? 0 : fragmentOffset;
 };
 
@@ -187,7 +192,6 @@ bool CStreamer::InitUdpTransport(void)
             else
             {
                 udpsocketclose(m_RtpSocket);
-                udpsocketclose(m_RtcpSocket);
             };
         }
     };
@@ -252,6 +256,7 @@ void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_
     }
 
     int offset = 0;
+    printf("CStremer::streamFrame: dataLen(%u)\n", dataLen);
     do {
         offset = SendRtpPacket(data, dataLen, offset, qtable0, qtable1);
     } while(offset != 0);
@@ -259,9 +264,6 @@ void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_
     // Increment ONLY after a full frame
     uint32_t units = 90000; // Hz per RFC 2435
     m_Timestamp += (units * deltams / 1000);                             // fixed timestamp increment for a frame rate of 25fps
-
-    m_SendIdx++;
-    if (m_SendIdx > 1) m_SendIdx = 0;
 };
 
 #include <assert.h>
