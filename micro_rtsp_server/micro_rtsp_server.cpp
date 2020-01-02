@@ -4,6 +4,7 @@
 #include <tcpip_adapter.h>
 
 #include <esp_timer.h>
+#include <driver/gpio.h>
 
 #include <lwip/err.h>
 #include <lwip/sockets.h>
@@ -27,8 +28,8 @@
 
 const portTickType xDelayTime = 100 / portTICK_RATE_MS;
 const portTickType xDelayTimeTask = 10 / portTICK_RATE_MS;
-#define PRIORITY_SERVER 5
-#define PRIORITY_TASK 5
+#define PRIORITY_SERVER 2
+#define PRIORITY_TASK 1
 
 static const char* TAG = "micro_rtsp_server";
 // We wrap streamer around in context as we might want to pass some semaphore or flag to pause/stop streaming
@@ -123,14 +124,17 @@ void micro_rtsp_task(void *param)
 	static uint32_t littlecounter = 0;
 	while(1) {
 		// If we have an active client connection, just service that until gone
-		ESP_LOGI(TAG, "Frame task - start %llu", esp_timer_get_time());
+		//ESP_LOGI(TAG, "Frame task - start %llu", esp_timer_get_time());
+		uint64_t strt = esp_timer_get_time();
 		ctx->streamer->handleRequests(0); // we don't use a timeout here,
+		uint64_t end = esp_timer_get_time();
+		ESP_LOGI(TAG, "handleRequests %llu", end-strt);
 		// instead we send only if we have new enough frames
 		uint64_t now = esp_timer_get_time();
-		ESP_LOGI(TAG, "Frame task - middl %llu", now);
+		//ESP_LOGI(TAG, "Frame task - middl %llu", now);
 		if(ctx->streamer->anySessions()) {
 			if(now > lastimage + usecPerFrame || now < lastimage) { // handle clock rollover
-				ESP_LOGI(TAG, "Frame(%u)", littlecounter++);
+				//ESP_LOGI(TAG, "Frame(%u)", littlecounter++);
 				ctx->streamer->streamImage(now);
 				lastimage = now;
 				// check if we are overrunning our max frame rate			
@@ -145,8 +149,9 @@ void micro_rtsp_task(void *param)
         	        digitalWrite(LED_PIN, LOW);
 #endif
 	        }
-		ESP_LOGI(TAG, "Frame task - end   %llu", esp_timer_get_time());
+		//ESP_LOGI(TAG, "Frame task - end   %llu", esp_timer_get_time());
 		//vTaskDelay(xDelayTimeTask);
+		yieldthread();
 	}
 }
 
@@ -158,6 +163,16 @@ void* init_camera_cpp(void)
 	if (initialized) {
 		return &camera;
 	}
+
+    // from esp32-camera sample
+    if(esp32cam_aithinker_config.pin_pwdn != -1) {
+        //pinMode(esp32cam_aithinker_config.pin_pwdn, OUTPUT);
+	//digitalWrite(esp32cam_config.pin_pwdn, LOW);
+        gpio_set_direction((gpio_num_t)esp32cam_aithinker_config.pin_pwdn, GPIO_MODE_OUTPUT);
+	gpio_set_level((gpio_num_t)esp32cam_config.pin_pwdn, 0);
+    }
+
+
 	esp_err_t err = camera.init(esp32cam_aithinker_config);
 	if (err != ESP_OK)
 	{
