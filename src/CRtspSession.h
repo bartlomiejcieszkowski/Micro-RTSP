@@ -25,7 +25,7 @@ public:
     CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer);
     ~CRtspSession();
 
-    RTSP_CMD_TYPES Handle_RtspRequest(char const * aRequest, unsigned aRequestSize);
+    RTSP_CMD_TYPES Handle_RtspRequest(char * aRequest, unsigned aRequestSize);
 
     /**
        Read from our socket, parsing commands as possible.
@@ -45,7 +45,7 @@ public:
     uint16_t getRtpClientPort() { return m_RtpClientPort; }
 private:
     void Init();
-    bool ParseRtspRequest(char const * aRequest, unsigned aRequestSize);
+    bool ParseRtspRequest(char * aRequest, unsigned aRequestSize);
     char const * DateHeader();
 
     // RTSP request command handlers
