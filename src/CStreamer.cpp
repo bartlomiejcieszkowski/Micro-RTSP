@@ -123,8 +123,8 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         memcpy(RtpBuf + headerLen, quant1tbl, numQantBytes);
         headerLen += numQantBytes;
     }
-    if (isLastFragment)
-        printf("Sending timestamp %d, seq %d, fragoff %d, fraglen %d, jpegLen %d\n", m_Timestamp, m_SequenceNumber, fragmentOffset, fragmentLen, jpegLen);
+    //if (isLastFragment)
+    //    printf("Sending timestamp %d, seq %d, fragoff %d, fraglen %d, jpegLen %d\n", m_Timestamp, m_SequenceNumber, fragmentOffset, fragmentLen, jpegLen);
 
     // append the JPEG scan data to the RTP buffer
     memcpy(RtpBuf + headerLen,jpeg + fragmentOffset, fragmentLen);
@@ -153,8 +153,8 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
         }
         element = element->m_Next;
     }
-    if (isLastFragment)
-        printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
+    //if (isLastFragment)
+    //    printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
 
     return isLastFragment ? 0 : fragmentOffset;
 };
@@ -256,7 +256,7 @@ void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_
     }
 
     int offset = 0;
-    printf("CStremer::streamFrame: dataLen(%u)\n", dataLen);
+    //printf("CStremer::streamFrame: dataLen(%u)\n", dataLen);
     do {
         offset = SendRtpPacket(data, dataLen, offset, qtable0, qtable1);
     } while(offset != 0);
