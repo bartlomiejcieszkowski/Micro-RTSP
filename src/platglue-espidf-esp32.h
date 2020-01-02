@@ -93,13 +93,15 @@ inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
         tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
     }
+    /*
     else
     {
         int flags = fcntl(sock, F_GETFL);
 	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
     }
+     */
 
-    int res = recv(sock,buf,buflen,0);
+    int res = recv(sock,buf,buflen,timeoutmsec ? 0 : MSG_DONTWAIT);
     if(res > 0) {
         return res;
     }
