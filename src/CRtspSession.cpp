@@ -50,7 +50,7 @@ bool CRtspSession::ParseRtspRequest(char * aRequest, unsigned aRequestSize)
     // check whether the request contains information about the RTP/RTCP UDP client ports (SETUP command)
     char * ClientPortPtr;
     char * TmpPtr;
-    static char CP[1024];
+    char * CP;
     char * pCP;
 
     ClientPortPtr = strstr(aRequest,"client_port");
@@ -60,22 +60,27 @@ bool CRtspSession::ParseRtspRequest(char * aRequest, unsigned aRequestSize)
         if (TmpPtr != nullptr)
         {
             TmpPtr[0] = 0x00;
-            pCP = strchr(ClientPortPtr,'=');
+	}
+        CP = strchr(ClientPortPtr,'=');
+        if (CP != nullptr)
+        {
+            CP++;
+            pCP = strstr(CP,"-");
             if (pCP != nullptr)
             {
+                pCP[0] = 0x00;
+                m_ClientRTPPort  = atoi(CP);
+                pCP[0] = '-'; // restore
                 pCP++;
-                pCP = strstr(CP,"-");
-                if (pCP != nullptr)
-                {
-                    pCP[0] = 0x00;
-                    m_ClientRTPPort  = atoi(CP);
-                    m_ClientRTCPPort = m_ClientRTPPort + 1;
-		    pCP[0] = '-'; // restore
-                };
-            };
+                m_ClientRTCPPort = atoi(pCP);
+               //m_ClientRTCPPort = m_ClientRTPPort + 1;
+            }
+	}        
+        if (TmpPtr != nullptr)
+	{
 	    TmpPtr[0] = '\r'; // restore
-        };
-    };
+        }
+    }
 
     // Read everything up to the first space as the command name
     bool parseSucceeded = false;
@@ -140,6 +145,7 @@ bool CRtspSession::ParseRtspRequest(char * aRequest, unsigned aRequestSize)
                     uidx++;
                     ++j;
                 };
+		m_URLHostPort[uidx] = '\0';
             }
             else --j;
             i = j;
@@ -233,7 +239,8 @@ RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char * aRequest, unsigned aReque
         case RTSP_DESCRIBE: { Handle_RtspDESCRIBE(); break; };
         case RTSP_SETUP:    { Handle_RtspSETUP();    break; };
         case RTSP_PLAY:     { Handle_RtspPLAY();     break; };
-        default: {};
+	case RTSP_TEARDOWN: { break; };
+	default: { printf("UNSUPPORTED: %s\n", aRequest); };
         };
     };
     return m_RtspCmdType;
@@ -295,7 +302,7 @@ void CRtspSession::Handle_RtspDESCRIBE()
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
              "%s\r\n"
-             "Content-Base: rtsp://%s/mjpeg/%u/\r\n"
+             "Content-Base: rtsp://%s/mjpeg/%u/\r\n" // we can copy paste rtsp string from request
              "Content-Type: application/sdp\r\n"
              "Content-Length: %d\r\n\r\n"
              "%s",
@@ -387,17 +394,19 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
     static char RecvBuf[RTSP_BUFFER_SIZE];   // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
     //memset(RecvBuf,0x00,sizeof(RecvBuf));
-    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf), readTimeoutMs);
+    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf)-1, readTimeoutMs);
     if(res > 0) {
         // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
         if ((RecvBuf[0] == 'O') || (RecvBuf[0] == 'D') || (RecvBuf[0] == 'S') || (RecvBuf[0] == 'P') || (RecvBuf[0] == 'T'))
         {
+            RecvBuf[res] = '\0';
             RTSP_CMD_TYPES C = Handle_RtspRequest(RecvBuf,res);
             if (C == RTSP_PLAY)
                 m_streaming = true;
             else if (C == RTSP_TEARDOWN)
                 m_stopped = true;
         }
+
         return true;
     }
     else if(res == 0) {
