@@ -39,6 +39,19 @@
 #define CAMERA_CONFIG esp32cam_config
 #endif
 
+#if CONFIG_ESP32_CAMERA_FRAMESIZE_QVGA
+#define DEFAULT_FRAMESIZE FRAMESIZE_QVGA
+#elif CONFIG_ESP32_CAMERA_FRAMESIZE_VGA
+#define DEFAULT_FRAMESIZE FRAMESIZE_VGA
+#elif CONFIG_ESP32_CAMERA_FRAMESIZE_SVGA
+#define DEFAULT_FRAMESIZE FRAMESIZE_SVGA
+#elif CONFIG_ESP32_CAMERA_FRAMESIZE_SXGA
+#define DEFAULT_FRAMESIZE FRAMESIZE_SXGA
+#elif CONFIG_ESP32_CAMERA_FRAMESIZE_UXGA
+#define DEFAULT_FRAMESIZE FRAMESIZE_UXGA
+#else
+#error "Missing CONFIG_ESP32_CAMERA_FRAMESIZE"
+#endif
 const portTickType xDelayTime = 100 / portTICK_RATE_MS;
 const portTickType xDelayTimeTask = 10 / portTICK_RATE_MS;
 #define PRIORITY_SERVER 2
@@ -48,9 +61,9 @@ static const char* TAG = "micro_rtsp_server";
 // We wrap streamer around in context as we might want to pass some semaphore or flag to pause/stop streaming
 struct _micro_rtsp_ctx
 {
-	CStreamer * streamer;
-	TaskHandle_t handle_task;
-	TaskHandle_t handle_server;
+    CStreamer * streamer;
+    TaskHandle_t handle_task;
+    TaskHandle_t handle_server;
 };
 typedef struct _micro_rtsp_ctx micro_rtsp_ctx;
 
@@ -58,205 +71,199 @@ micro_rtsp_ctx mctx;
 
 void micro_rtsp_server(void *param)
 {
-	micro_rtsp_ctx* ctx = (micro_rtsp_ctx*)param;
-	char addr_str[128]; // cant we shorten this if we are doing ipv4
-	int addr_family;
-	int ip_protocol;
+    micro_rtsp_ctx* ctx = (micro_rtsp_ctx*)param;
+    char addr_str[128]; // cant we shorten this if we are doing ipv4
+    int addr_family;
+    int ip_protocol;
 
-	int s;
-	fd_set readset;
+    int s;
+    fd_set readset;
 
-	FD_ZERO(&readset);
-	
-	while (1) {
+    FD_ZERO(&readset);
+    
+    while (1) {
 #ifdef CONFIG_EXAMPLE_IPV4
-		struct sockaddr_in dest_addr;
-		dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		dest_addr.sin_family = AF_INET;
-		dest_addr.sin_port = htons(RTSP_PORT);
-		addr_family = AF_INET;
-		ip_protocol = IPPROTO_IP;
-		inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+        struct sockaddr_in dest_addr;
+        dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_port = htons(RTSP_PORT);
+        addr_family = AF_INET;
+        ip_protocol = IPPROTO_IP;
+        inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 #else
-		struct sockaddr_int6 dest_addr;
-		bzero(&dest_addr.sin6_addr.un, sizeof(dest_addr.sin6_addr.un));
-		dest_addr.sin6_family = AF_INET6;
-		dest_addr.sin6_port = htons(RTSP_PORT);
-		addr_family = AF_INET6;
-		ip_protocol = IPPROTO_IPV6;
-		inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+        struct sockaddr_int6 dest_addr;
+        bzero(&dest_addr.sin6_addr.un, sizeof(dest_addr.sin6_addr.un));
+        dest_addr.sin6_family = AF_INET6;
+        dest_addr.sin6_port = htons(RTSP_PORT);
+        addr_family = AF_INET6;
+        ip_protocol = IPPROTO_IPV6;
+        inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
 #endif
-		int listen_sock = socket(addr_family, SOCK_STREAM 
-				//| SOCK_NONBLOCK
-				, ip_protocol); // SOCK_DGRAM for UDP
-		if (listen_sock < 0) {
-			ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-			break;
-		}
-		ESP_LOGI(TAG, "Socket created");
-		
-		int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-		if (err != 0) {
-			ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-			break;
-		}
-		ESP_LOGI(TAG, "Socket bound, port %d", RTSP_PORT);
+        int listen_sock = socket(addr_family, SOCK_STREAM 
+                //| SOCK_NONBLOCK
+                , ip_protocol); // SOCK_DGRAM for UDP
+        if (listen_sock < 0) {
+            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            break;
+        }
+        ESP_LOGI(TAG, "Socket created");
+        
+        int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        if (err != 0) {
+            ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+            break;
+        }
+        ESP_LOGI(TAG, "Socket bound, port %d", RTSP_PORT);
 
-		err = listen(listen_sock, 8);
-		if (err != 0) {
-			ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
-			break;
-		}
-		ESP_LOGI(TAG, "Socket listening");
-		struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
-		uint addr_len = sizeof(source_addr);
-		do {
-	                FD_ZERO(&readset);
-	        	FD_SET(listen_sock, &readset);
-			int max_client_fd = 0;
-			ctx->streamer->addSessionsToListener(&readset, &max_client_fd);
+        err = listen(listen_sock, 8);
+        if (err != 0) {
+            ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+            break;
+        }
+        ESP_LOGI(TAG, "Socket listening");
+        struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
+        uint addr_len = sizeof(source_addr);
+        do {
+                    FD_ZERO(&readset);
+                FD_SET(listen_sock, &readset);
+            int max_client_fd = 0;
+            ctx->streamer->addSessionsToListener(&readset, &max_client_fd);
 
-			int count = select((listen_sock > max_client_fd ? listen_sock : max_client_fd) + 1, &readset,
-					NULL, NULL,
-					NULL);
+            int count = select((listen_sock > max_client_fd ? listen_sock : max_client_fd) + 1, &readset,
+                    NULL, NULL,
+                    NULL);
 
-			if (max_client_fd != -1) 
-			    ctx->streamer->handleRequestsSet(&readset);
+            if (max_client_fd != -1) 
+                ctx->streamer->handleRequestsSet(&readset);
 
-			if (FD_ISSET(listen_sock, &readset)) {
-			int client_sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
-			if (client_sock > 0)
-			{
+            if (FD_ISSET(listen_sock, &readset)) {
+            int client_sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+            if (client_sock > 0)
+            {
 #ifdef CONFIG_EXAMPLE_IPV4
-			ESP_LOGI(TAG, "Client connected. Client address: %s", inet_ntoa(((struct sockaddr_in*)&source_addr)->sin_addr));
+            ESP_LOGI(TAG, "Client connected. Client address: %s", inet_ntoa(((struct sockaddr_in*)&source_addr)->sin_addr));
 #else
-			ESP_LOGI(TAG, "Client connected.");
+            ESP_LOGI(TAG, "Client connected.");
 #endif
 #ifdef ENABLE_CAMERA_LED_ON_CONNECTION
-			digitalWrite(LED_PIN, HIGH);
+            digitalWrite(LED_PIN, HIGH);
 #endif
                         ctx->streamer->addSession(client_sock);
-			vTaskDelay(xDelayTime);
-			}
-			}
-		} while(1);
+            vTaskDelay(xDelayTime);
+            }
+            }
+        } while(1);
 
 
-	}
+    }
 }
 
 void micro_rtsp_task(void *param)
 {
-	micro_rtsp_ctx* ctx = (micro_rtsp_ctx*)param;
-	// stream frames
+    micro_rtsp_ctx* ctx = (micro_rtsp_ctx*)param;
+    // stream frames
 
-	const uint32_t msecPerFrame = 100;
-	const uint32_t usecPerFrame = 1;//msecPerFrame * 1000;
-	uint64_t lastimage = esp_timer_get_time();
-	static uint32_t littlecounter = 0;
-	while(1) {
-		// If we have an active client connection, just service that until gone
-		//ESP_LOGI(TAG, "Frame task - start %llu", esp_timer_get_time());
-		/*
-		uint64_t strt = esp_timer_get_time();
-		ctx->streamer->handleRequests(0); // we don't use a timeout here,
-		uint64_t end = esp_timer_get_time();
-		ESP_LOGI(TAG, "handleRequests %llu", end-strt);
-		 */
-		// instead we send only if we have new enough frames
-		uint64_t now = esp_timer_get_time();
-		//ESP_LOGI(TAG, "Frame task - middl %llu", now);
-		if(ctx->streamer->anySessionsRunning()) {
-			if(now > lastimage + usecPerFrame || now < lastimage) { // handle clock rollover
-				ctx->streamer->streamImage(now);
-				lastimage = now;
-				// check if we are overrunning our max frame rate			
-				now = esp_timer_get_time();
-				ESP_LOGI(TAG, "Frame(%u) took %llu", littlecounter++, now - lastimage);
-				/*
-				if(now > lastimage + usecPerFrame) {
-					printf("warning exceeding max frame rate of %llu ms\n", (now - lastimage)/1000);
-				}
-				 */
-			}
-		} else {
+    const uint32_t msecPerFrame = 100;
+    uint64_t lastimage = esp_timer_get_time()/1000ULL;
+    static uint32_t littlecounter = 0;
+    while(1) {
+        // instead we send only if we have new enough frames
+        uint64_t now = esp_timer_get_time()/1000ULL;
+        if(ctx->streamer->anySessionsRunning()) {
+            if(now > lastimage + msecPerFrame || now < lastimage) { // handle clock rollover
+                ctx->streamer->streamImage(now);
+                lastimage = now;
+                // check if we are overrunning our max frame rate            
+                now = esp_timer_get_time()/1000ULL;
+                //ESP_LOGI(TAG, "Frame(%u) took %llu", littlecounter++, now - lastimage);
+                /*
+                if(now > lastimage + usecPerFrame) {
+                    printf("warning exceeding max frame rate of %llu ms\n", (now - lastimage));
+                }
+                 */
+            }
+        } else {
 #ifdef ENABLE_CAMERA_LED_ON_CONNECTION
-			// led off
-        	        digitalWrite(LED_PIN, LOW);
+            // led off
+                    digitalWrite(LED_PIN, LOW);
 #endif
-	        }
-		//ESP_LOGI(TAG, "Frame task - end   %llu", esp_timer_get_time());
-		//vTaskDelay(xDelayTimeTask);
-		yieldthread();
-	}
+            }
+        //ESP_LOGI(TAG, "Frame task - end   %llu", esp_timer_get_time());
+        //vTaskDelay(xDelayTimeTask);
+        yieldthread();
+    }
 }
 
 
 void* init_camera_cpp(void)
 {
-	static int initialized = 0;
+    static int initialized = 0;
         static OV2640 camera;
-	if (initialized) {
-		return &camera;
-	}
+    if (initialized) {
+        return &camera;
+    }
 
     // from esp32-camera sample
     if(CAMERA_CONFIG.pin_pwdn != -1) {
         gpio_set_direction((gpio_num_t)CAMERA_CONFIG.pin_pwdn, GPIO_MODE_OUTPUT);
-	gpio_set_level((gpio_num_t)CAMERA_CONFIG.pin_pwdn, 0);
+        gpio_set_level((gpio_num_t)CAMERA_CONFIG.pin_pwdn, 0);
     }
 
+    if (DEFAULT_FRAMESIZE <= FRAMESIZE_VGA)
+    {
+	    CAMERA_CONFIG.fb_count *= 2;
+    }
+    CAMERA_CONFIG.frame_size = DEFAULT_FRAMESIZE;
+    esp_err_t err = camera.init(CAMERA_CONFIG);
+    if (err != ESP_OK)
+    {
+        return NULL;
+    }
+    initialized = 1;
 
-	esp_err_t err = camera.init(CAMERA_CONFIG);
-	if (err != ESP_OK)
-	{
-		return NULL;
-	}
-	initialized = 1;
-
-	return (void*)&camera;
+    return (void*)&camera;
 }
 
-int start_micro_rstp_cpp(void* camera)	
+int start_micro_rstp_cpp(void* camera)    
 {
-	static uint initialized = 0;
-	if (initialized) {
-		return -404;
-	}
+    static uint initialized = 0;
+    if (initialized) {
+        return -404;
+    }
 
-	mctx.handle_task = NULL;
-	mctx.handle_server = NULL;
-	mctx.streamer = NULL;
+    mctx.handle_task = NULL;
+    mctx.handle_server = NULL;
+    mctx.streamer = NULL;
 
-	/* 1. Create all necessary things in this function
-	 * 2. Wrap around funcionality from "main" loop into the function
-	 * 3. Create a classic FreeRTOS task
-	 */
+    /* 1. Create all necessary things in this function
+     * 2. Wrap around funcionality from "main" loop into the function
+     * 3. Create a classic FreeRTOS task
+     */
         if (camera == NULL)
-	{
-		return -1;
-	}
+    {
+        return -1;
+    }
 
-	mctx.streamer = new OV2640Streamer(*((OV2640*)camera));
+    mctx.streamer = new OV2640Streamer(*((OV2640*)camera));
 
 #ifdef ENABLE_CAMERA_LED_ON_CONNECTION
-	pinMode(LED_PIN, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
         digitalWrite(LED_PIN, LOW);
 #endif
-	BaseType_t xReturned;
-	xReturned = xTaskCreatePinnedToCore(micro_rtsp_task, "micro_rtsp_task", 4*1024, (void*)&mctx, PRIORITY_TASK, &mctx.handle_task, 0);
-	if (xReturned != pdPASS)
-	{
-		return -3;
-	}
+    BaseType_t xReturned;
+    xReturned = xTaskCreatePinnedToCore(micro_rtsp_task, "micro_rtsp_task", 4*1024, (void*)&mctx, PRIORITY_TASK, &mctx.handle_task, 0);
+    if (xReturned != pdPASS)
+    {
+        return -3;
+    }
 
-	xReturned = xTaskCreatePinnedToCore(micro_rtsp_server, "micro_rtsp_server", 4*1024, (void*)&mctx, PRIORITY_SERVER, &mctx.handle_server, 0);
-	if (xReturned != pdPASS)
-	{
-		return -4;
-	}
+    xReturned = xTaskCreatePinnedToCore(micro_rtsp_server, "micro_rtsp_server", 4*1024, (void*)&mctx, PRIORITY_SERVER, &mctx.handle_server, 0);
+    if (xReturned != pdPASS)
+    {
+        return -4;
+    }
 
-	return 0;
+    return 0;
 }
 
 // C Wraps
@@ -270,15 +277,15 @@ int start_micro_rtsp_server(void* camera)
 
 void* initialize_camera(void)
 {
-	return init_camera_cpp();
+    return init_camera_cpp();
 }
 
 static int start_server(int argc, char **argv)
 {
-	ESP_LOGI(TAG, "start_server - init_camera");
-	void* cam = initialize_camera();
-	ESP_LOGI(TAG, "start_server - start_micro_rtsp_server");
-	return start_micro_rtsp_server(cam);
+    ESP_LOGI(TAG, "start_server - init_camera");
+    void* cam = initialize_camera();
+    ESP_LOGI(TAG, "start_server - start_micro_rtsp_server");
+    return start_micro_rtsp_server(cam);
 }
 
 void register_micro_rtsp(void)

@@ -30,4 +30,22 @@ menu "Micro RTSP Server Configuration"
         config ESP32_CAMERA_CONFIG_TTGO_T
             bool "TTGO T"
     endchoice
+    
+    choice ESP32_CAMERA_FRAMESIZE
+        bool "Camera framesize"
+        default ESP32_CAMERA_FRAMESIZE_SVGA
+        help
+            If the framerate is low, try lowering framesize
+
+        config ESP32_CAMERA_FRAMESIZE_QVGA
+            bool "QVGA (320x240)"
+        config ESP32_CAMERA_FRAMESIZE_VGA
+            bool "SVGA (640x480)"
+        config ESP32_CAMERA_FRAMESIZE_SVGA
+            bool "SVGA (800x600)"
+        config ESP32_CAMERA_FRAMESIZE_SXGA
+            bool "SXGA (1280x1024)"
+        config ESP32_CAMERA_FRAMESIZE_UXGA
+            bool "UXGA (1600x1200)"
+    endchoice
 endmenu
