@@ -5,4 +5,29 @@ menu "Micro RTSP Server Configuration"
         help
             Enables Micro RTSP Server
 
+    choice MICRO_RTSP_PORT
+        bool "RTSP server port"
+        default MICRO_RTSP_PORT_8554
+        help
+            rtsp port
+
+        config MICRO_RTSP_PORT_8554
+            bool "8554"
+        config MICRO_RTSP_PORT_554
+            bool "554"
+    endchoice
+
+    choice ESP32_CAMERA_CONFIG
+        bool "Camera config to use"
+        default ESP32_CAMERA_CONFIG_DEFAULT
+        help
+            Determines compiled in camera config.
+
+        config ESP32_CAMERA_CONFIG_DEFAULT
+            bool "DEFAULT"
+        config ESP32_CAMERA_CONFIG_AITHINKER
+            bool "AITHINKER"
+        config ESP32_CAMERA_CONFIG_TTGO_T
+            bool "TTGO T"
+    endchoice
 endmenu

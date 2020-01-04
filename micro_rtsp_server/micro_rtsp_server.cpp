@@ -24,7 +24,20 @@
 //#define ENABLE_CAMERA_LED_ON_CONNECTION
 #define LED_PIN (4)
 #define CONFIG_EXAMPLE_IPV4 1
+
+#if CONFIG_MICRO_RTSP_PORT_8554
 #define RTSP_PORT (8554)
+#else
+#define RTSP_PORT (554)
+#endif
+
+#if CONFIG_ESP32_CAMERA_CONFIG_AITHINKER
+#define CAMERA_CONFIG esp32cam_aithinker_config
+#elif CONFIG_ESP32_CAMERA_CONFIG_TTGO_T
+#define CAMERA_CONFIG esp32cam_ttgo_t_config
+#else
+#define CAMERA_CONFIG esp32cam_config
+#endif
 
 const portTickType xDelayTime = 100 / portTICK_RATE_MS;
 const portTickType xDelayTimeTask = 10 / portTICK_RATE_MS;
@@ -165,15 +178,13 @@ void* init_camera_cpp(void)
 	}
 
     // from esp32-camera sample
-    if(esp32cam_aithinker_config.pin_pwdn != -1) {
-        //pinMode(esp32cam_aithinker_config.pin_pwdn, OUTPUT);
-	//digitalWrite(esp32cam_config.pin_pwdn, LOW);
-        gpio_set_direction((gpio_num_t)esp32cam_aithinker_config.pin_pwdn, GPIO_MODE_OUTPUT);
-	gpio_set_level((gpio_num_t)esp32cam_config.pin_pwdn, 0);
+    if(CAMERA_CONFIG.pin_pwdn != -1) {
+        gpio_set_direction((gpio_num_t)CAMERA_CONFIG.pin_pwdn, GPIO_MODE_OUTPUT);
+	gpio_set_level((gpio_num_t)CAMERA_CONFIG.pin_pwdn, 0);
     }
 
 
-	esp_err_t err = camera.init(esp32cam_aithinker_config);
+	esp_err_t err = camera.init(CAMERA_CONFIG);
 	if (err != ESP_OK)
 	{
 		return NULL;
