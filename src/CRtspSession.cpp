@@ -60,25 +60,23 @@ bool CRtspSession::ParseRtspRequest(char * aRequest, unsigned aRequestSize)
         if (TmpPtr != nullptr)
         {
             TmpPtr[0] = 0x00;
-	}
-        CP = strchr(ClientPortPtr,'=');
-        if (CP != nullptr)
-        {
-            CP++;
-            pCP = strstr(CP,"-");
-            if (pCP != nullptr)
+	
+            CP = strchr(ClientPortPtr,'=');
+            if (CP != nullptr)
             {
-                pCP[0] = 0x00;
-                m_ClientRTPPort  = atoi(CP);
-                pCP[0] = '-'; // restore
-                pCP++;
-                m_ClientRTCPPort = atoi(pCP);
-               //m_ClientRTCPPort = m_ClientRTPPort + 1;
+                CP++;
+                pCP = strstr(CP,"-");
+                if (pCP != nullptr)
+                {
+                    pCP[0] = 0x00;
+                    m_ClientRTPPort  = atoi(CP);
+                    pCP[0] = '-'; // restore
+                    pCP++;
+                    m_ClientRTCPPort = atoi(pCP);
+                   //m_ClientRTCPPort = m_ClientRTPPort + 1;
+                }
             }
-	}        
-        if (TmpPtr != nullptr)
-	{
-	    TmpPtr[0] = '\r'; // restore
+            TmpPtr[0] = '\r'; // restore
         }
     }
 
