@@ -15,7 +15,9 @@ public:
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }
+    int anySessionsRunning(); 
 
+    bool handleRequestsSet(fd_set * set);
     bool handleRequests(uint32_t readTimeoutMs);
 
     u_short GetRtpServerPort();
@@ -24,6 +26,7 @@ public:
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
     bool InitUdpTransport(void);
     void ReleaseUdpTransport(void);
+    void addSessionsToListener(fd_set * set, int * max_fd);
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);

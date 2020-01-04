@@ -32,7 +32,39 @@ CStreamer::~CStreamer()
         element = element->m_Next;
         delete session;
     }
-};
+}
+
+int CStreamer::anySessionsRunning()
+{
+    LinkedListElement* element = m_Clients.m_Next;
+    CRtspSession* session = NULL;
+    while (element != &m_Clients)
+    {
+        session = static_cast<CRtspSession*>(element);
+	if (session->m_streaming) return 1;
+        element = element->m_Next;
+    }
+    return 0;
+}
+
+void CStreamer::addSessionsToListener(fd_set * set, int * max_fd)
+{
+    *max_fd = -1;
+    LinkedListElement* element = m_Clients.m_Next;
+    while(element != &m_Clients)
+    {
+        CRtspSession* session = static_cast<CRtspSession*>(element);
+        SOCKET client_socket = session->getClient();
+	FD_SET(client_socket, set);
+	if (client_socket > *max_fd)
+	{
+		*max_fd = client_socket;
+	}
+
+        element = element->m_Next;
+    }
+
+}
 
 void CStreamer::addSession(SOCKET aClient)
 {
@@ -212,6 +244,31 @@ void CStreamer::ReleaseUdpTransport(void)
         m_RtpSocket = NULLSOCKET;
         m_RtcpSocket = NULLSOCKET;
     }
+}
+
+/**
+   Call handleRequests on all sessions
+ */
+bool CStreamer::handleRequestsSet(fd_set * set)
+{
+    bool retVal = true;
+    LinkedListElement* element = m_Clients.m_Next;
+    while(element != &m_Clients)
+    {
+        CRtspSession* session = static_cast<CRtspSession*>(element);
+	if (FD_ISSET(session->getClient(), set))
+            retVal &= session->handleRequests(0);
+
+        element = element->m_Next;
+
+        if (session->m_stopped) 
+        {
+	    FD_CLR(session->getClient(), set);
+            // remove session here, so we wont have to send to it
+            delete session;
+        }
+    }
+    return retVal;
 }
 
 /**

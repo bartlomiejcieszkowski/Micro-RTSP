@@ -62,6 +62,11 @@ void micro_rtsp_server(void *param)
 	char addr_str[128]; // cant we shorten this if we are doing ipv4
 	int addr_family;
 	int ip_protocol;
+
+	int s;
+	fd_set readset;
+
+	FD_ZERO(&readset);
 	
 	while (1) {
 #ifdef CONFIG_EXAMPLE_IPV4
@@ -105,7 +110,20 @@ void micro_rtsp_server(void *param)
 		ESP_LOGI(TAG, "Socket listening");
 		struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
 		uint addr_len = sizeof(source_addr);
-		while (1) {
+		do {
+	                FD_ZERO(&readset);
+	        	FD_SET(listen_sock, &readset);
+			int max_client_fd = 0;
+			ctx->streamer->addSessionsToListener(&readset, &max_client_fd);
+
+			int count = select((listen_sock > max_client_fd ? listen_sock : max_client_fd) + 1, &readset,
+					NULL, NULL,
+					NULL);
+
+			if (max_client_fd != -1) 
+			    ctx->streamer->handleRequestsSet(&readset);
+
+			if (FD_ISSET(listen_sock, &readset)) {
 			int client_sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
 			if (client_sock > 0)
 			{
@@ -120,7 +138,8 @@ void micro_rtsp_server(void *param)
                         ctx->streamer->addSession(client_sock);
 			vTaskDelay(xDelayTime);
 			}
-		}
+			}
+		} while(1);
 
 
 	}
@@ -132,29 +151,33 @@ void micro_rtsp_task(void *param)
 	// stream frames
 
 	const uint32_t msecPerFrame = 100;
-	const uint32_t usecPerFrame = msecPerFrame * 1000;
+	const uint32_t usecPerFrame = 1;//msecPerFrame * 1000;
 	uint64_t lastimage = esp_timer_get_time();
 	static uint32_t littlecounter = 0;
 	while(1) {
 		// If we have an active client connection, just service that until gone
 		//ESP_LOGI(TAG, "Frame task - start %llu", esp_timer_get_time());
+		/*
 		uint64_t strt = esp_timer_get_time();
 		ctx->streamer->handleRequests(0); // we don't use a timeout here,
 		uint64_t end = esp_timer_get_time();
 		ESP_LOGI(TAG, "handleRequests %llu", end-strt);
+		 */
 		// instead we send only if we have new enough frames
 		uint64_t now = esp_timer_get_time();
 		//ESP_LOGI(TAG, "Frame task - middl %llu", now);
-		if(ctx->streamer->anySessions()) {
+		if(ctx->streamer->anySessionsRunning()) {
 			if(now > lastimage + usecPerFrame || now < lastimage) { // handle clock rollover
-				//ESP_LOGI(TAG, "Frame(%u)", littlecounter++);
 				ctx->streamer->streamImage(now);
 				lastimage = now;
 				// check if we are overrunning our max frame rate			
 				now = esp_timer_get_time();
+				ESP_LOGI(TAG, "Frame(%u) took %llu", littlecounter++, now - lastimage);
+				/*
 				if(now > lastimage + usecPerFrame) {
 					printf("warning exceeding max frame rate of %llu ms\n", (now - lastimage)/1000);
 				}
+				 */
 			}
 		} else {
 #ifdef ENABLE_CAMERA_LED_ON_CONNECTION
@@ -221,13 +244,13 @@ int start_micro_rstp_cpp(void* camera)
         digitalWrite(LED_PIN, LOW);
 #endif
 	BaseType_t xReturned;
-	xReturned = xTaskCreate(micro_rtsp_task, "micro_rtsp_task", 4*1024, (void*)&mctx, PRIORITY_TASK, &mctx.handle_task);
+	xReturned = xTaskCreatePinnedToCore(micro_rtsp_task, "micro_rtsp_task", 4*1024, (void*)&mctx, PRIORITY_TASK, &mctx.handle_task, 0);
 	if (xReturned != pdPASS)
 	{
 		return -3;
 	}
 
-	xReturned = xTaskCreate(micro_rtsp_server, "micro_rtsp_server", 4*1024, (void*)&mctx, PRIORITY_SERVER, &mctx.handle_server);
+	xReturned = xTaskCreatePinnedToCore(micro_rtsp_server, "micro_rtsp_server", 4*1024, (void*)&mctx, PRIORITY_SERVER, &mctx.handle_server, 0);
 	if (xReturned != pdPASS)
 	{
 		return -4;
